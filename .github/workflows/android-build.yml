@@ -16,8 +16,20 @@ jobs:
         env:
           GITHUB_WORKSPACE: ${{ github.workspace }}
         run: |
-          docker run --rm -v "${{ github.workspace }}":/home/user/hostcwd -w /home/user/hostcwd kivy/buildozer:latest \
-            -v android debug
+          docker run --rm -v "${{ github.workspace }}":/home/user/hostcwd -w /home/user/hostcwd --entrypoint /bin/bash kivy/buildozer:latest -lc "
+            set -e
+            SDKMANAGER=\$(command -v sdkmanager || true)
+            if [ -z \"\$SDKMANAGER\" ]; then
+              SDKMANAGER=\$(find /opt -type f -name sdkmanager | head -n 1)
+            fi
+            if [ -z \"\$SDKMANAGER\" ]; then
+              echo 'sdkmanager not found in container'
+              exit 1
+            fi
+            yes | \"\$SDKMANAGER\" --licenses >/dev/null || true
+            \"\$SDKMANAGER\" 'platform-tools' 'platforms;android-29' 'build-tools;29.0.3'
+            buildozer -v android debug
+          "
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
