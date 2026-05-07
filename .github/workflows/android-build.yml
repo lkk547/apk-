@@ -103,6 +103,24 @@ jobs:
           test -x "$ANDROID_SDK_ROOT/build-tools/34.0.0/aidl"
           "$ANDROID_SDK_ROOT/build-tools/34.0.0/aidl" --version || true
 
+      - name: Verify aidl and make available
+        env:
+          ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
+        run: |
+          set -euxo pipefail
+          echo "Contents of build-tools:"
+          ls -la "$ANDROID_SDK_ROOT/build-tools" || true
+          ls -la "$ANDROID_SDK_ROOT/build-tools/34.0.0" || true
+          if [ -x "$ANDROID_SDK_ROOT/build-tools/34.0.0/aidl" ]; then
+            echo 'aidl present'
+          else
+            echo 'aidl not found under build-tools/34.0.0'
+          fi
+          echo "PATH="$PATH
+          # ensure aidl is on PATH for buildozer
+          sudo ln -sf "$ANDROID_SDK_ROOT/build-tools/34.0.0/aidl" /usr/local/bin/aidl || true
+          which aidl || true
+
       - name: Build APK with Buildozer
         env:
           ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
@@ -120,4 +138,3 @@ jobs:
           name: stock_simulator_apk
           path: bin/*.apk
           if-no-files-found: error
-
